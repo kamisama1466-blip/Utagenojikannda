@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Shadow Jump Mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin:0;
+    background:#111;
+    color:#fff;
+    font-family:sans-serif;
+    text-align:center;
+    overflow:hidden;
+  }
+  #gameCanvas {
+    background:#000;
+    display:block;
+    margin:0 auto;
+  }
+  #ui {
+    position:fixed;
+    top:10px;
+    left:0;
+    right:0;
+    text-align:center;
+    pointer-events:none;
+  }
+  #score {
+    font-size:20px;
+  }
+  #msg {
+    font-size:14px;
+    margin-top:4px;
+    color:#ccc;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="ui">
+  <div id="score">Score: 0</div>
+  <div id="msg">左タップで左移動／右タップで右移動</div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let player = {
+  x: canvas.width / 2,
+  y: canvas.height - 80,
+  size: 40
+};
+
+let blocks = [];
+let score = 0;
+let gameOver = false;
+
+function spawnBlock() {
+  blocks.push({
+    x: Math.random() * (canvas.width - 40),
+    y: -40,
+    size: 40
+  });
+}
+
+function resetGame() {
+  player.x = canvas.width / 2;
+  player.y = canvas.height - 80;
+  blocks = [];
+  score = 0;
+  gameOver = false;
+}
+
+canvas.addEventListener("touchstart", e => {
+  if (gameOver) {
+    resetGame();
+    return;
+  }
+  let t = e.touches[0].clientX;
+  if (t < canvas.width / 2) player.x -= 30;
+  else player.x += 30;
+});
+
+canvas.addEventListener("mousedown", e => {
+  if (gameOver) {
+    resetGame();
+    return;
+  }
+  let x = e.clientX;
+  if (x < canvas.width / 2) player.x -= 30;
+  else player.x += 30;
+});
+
+function update() {
+  if (gameOver) return;
+
+  // ブロック落下
+  for (let b of blocks) {
+    b.y += 6;
+  }
+
+  // 画面外ブロック削除
+  blocks = blocks.filter(b => b.y < canvas.height + b.size);
+
+  // 当たり判定
+  for (let b of blocks) {
+    if (
+      b.x < player.x + player.size &&
+      b.x + b.size > player.x &&
+      b.y < player.y + player.size &&
+      b.y + b.size > player.y
+    ) {
+      gameOver = true;
+      document.getElementById("msg").textContent =
+        "GAME OVER - 画面タップでリスタート";
+    }
+  }
+
+  score++;
+  document.getElementById("score").textContent = "Score: " + score;
+}
+
+function draw() {
+  ctx.fillStyle = "#111";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // プレイヤー
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(
+    player.x - player.size / 2,
+    player.y - player.size / 2,
+    player.size,
+    player.size
+  );
+
+  // ブロック
+  ctx.fillStyle = "#444";
+  for (let b of blocks) {
+    ctx.fillRect(b.x, b.y, b.size, b.size);
+  }
+
+  if (gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#fff";
+    ctx.font = "24px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+    ctx.font = "16px sans-serif";
+    ctx.fillText("画面タップでリスタート", canvas.width / 2, canvas.height / 2 + 20);
+  }
+}
+
+setInterval(spawnBlock, 700);
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+</body>
+</html>
