@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Drag Shooting Game</title>
+<style>
+  body { margin:0; overflow:hidden; background:#000; }
+  canvas { display:block; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Player (triangle)
+const player = {
+  x: canvas.width / 2,
+  y: canvas.height - 100,
+  size: 30
+};
+
+// Bullets
+let bullets = [];
+function shoot() {
+  bullets.push({ x: player.x, y: player.y - 20, size: 5 });
+}
+setInterval(shoot, 250);
+
+// Enemies
+let enemies = [];
+function spawnEnemy() {
+  enemies.push({
+    x: Math.random() * canvas.width,
+    y: -20,
+    size: 20,
+    speed: 2 + Math.random() * 2
+  });
+}
+setInterval(spawnEnemy, 600);
+
+// Drag control
+let dragging = false;
+canvas.addEventListener("touchstart", e => {
+  dragging = true;
+});
+canvas.addEventListener("touchend", e => {
+  dragging = false;
+});
+canvas.addEventListener("touchmove", e => {
+  if (dragging) {
+    const touch = e.touches[0];
+    player.x = touch.clientX;
+    player.y = touch.clientY;
+  }
+});
+
+// Draw triangle
+function drawTriangle(x, y, size) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - size);
+  ctx.lineTo(x - size, y + size);
+  ctx.lineTo(x + size, y + size);
+  ctx.closePath();
+  ctx.fillStyle = "cyan";
+  ctx.fill();
+}
+
+// Game loop
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawTriangle(player.x, player.y, player.size);
+
+  // Bullets
+  ctx.fillStyle = "yellow";
+  bullets.forEach((b, i) => {
+    b.y -= 6;
+    ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
+    if (b.y < 0) bullets.splice(i, 1);
+  });
+
+  // Enemies
+  ctx.fillStyle = "red";
+  enemies.forEach((e, i) => {
+    e.y += e.speed;
+    ctx.fillRect(e.x - e.size/2, e.y - e.size/2, e.size, e.size);
+
+    if (e.y > canvas.height) enemies.splice(i, 1);
+
+    bullets.forEach((b, bi) => {
+      if (Math.abs(b.x - e.x) < 20 && Math.abs(b.y - e.y) < 20) {
+        enemies.splice(i, 1);
+        bullets.splice(bi, 1);
+      }
+    });
+  });
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
+// Stars (background)
+let stars = [];
+for (let i = 0; i < 150; i++) {
+  stars.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: Math.random() * 2 + 1,
+    speed: Math.random() * 1 + 0.5
+  });
+}
+// Draw stars
+ctx.fillStyle = "white";
+stars.forEach(s => {
+  ctx.fillRect(s.x, s.y, s.size, s.size);
+  s.y += s.speed;
+  if (s.y > canvas.height) {
+    s.y = 0;
+    s.x = Math.random() * canvas.width;
+  }
+});
